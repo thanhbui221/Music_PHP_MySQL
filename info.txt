@@ -1,0 +1,3 @@
+new_admin, Admin123456!
+
+new_user, Newuser123!

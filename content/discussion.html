@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr">
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>TipTop Music</title>
+
+
+    <link rel="shortcut icon" type="image/x-icon" href="/KF7013/assets/images/TipTop_icon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link href="/KF7013/assets/stylesheets/theme.css" rel="stylesheet" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+  </head>
+
+<body>
+  <h1>Injection flaws</h1>
+    <p>
+      Injection flaws are security vulnerability that attackers exploit
+      to gain access to the backend database, shell command, or operating system.
+      Attackers can append complete scripts into applications and, therefore, execute such commands
+      to relay malicious code. There are many types of injection flaws:
+    </p>
+
+    <ul>
+      <li>SQL Injection</li>
+      <li>XML Injection</li>
+      <li>HTML Injection</li>
+      <li>OS Command Injection</li>
+      <li>LDAP Injection</li>  
+    </ul>
+
+    <p>
+      For this project, SQL Injection will be discussed further, because our web
+      works mainly with DBMS MySql. 
+    </p>
+
+    <p>
+      SQL Injection is a web secuity vulnerability that an attacker exploit to view data that they are not normally able to retrieve.
+      By interfering with the queries that an application makes to its database, the attacker can modify or delete the data of application's database.
+      This data include data belonging to other users, or any other data that are restrictly accessed. These action will damage the application's database and change its behavior.
+    </p>
+
+    <p>
+      There are a variety of SQL injection vulnerabilities, attacks, and techniques, which appears in different situations. 
+      Some common SQL injection examples are:
+    </p>
+
+    <ul>
+      <li>Retrieving hidden data, where you can modify an SQL query to return additional results.</li>
+      <li>Subverting application logic, where you can change a query to interfere with the application's logic.</li>
+      <li>UNION attacks, where you can retrieve data from different database tables.</li>
+      <li>Examining the database, where you can extract information about the version and structure of the database.</li>
+      <li>Blind SQL injection, where the results of a query you control are not returned in the application's responses.</li>  
+    </ul>
+
+    <h5>Retrieving hidden data</h5>
+    <p>
+      In the page showing all categories (‘category.php’), when the user click onto one of the name of category in the list, the application will send a GET REQUEST to the server. For example, if the user want to see all albums of the category ‘Chamber’, which has ‘catID’ = 10, the GET REQUEST will looks something like this:
+‘...albums.php?catDesc=Chamber&catID=10’. 
+
+This causes the application to make an SQL query to retrieve details of the albums from the database:
+SELECT CDID, CDTitle FROM tiptop_cd WHERE catID = 10
+
+This SQL Query asks the database to return CDID, CDTitle from the table tiptop_cd.
+If our web doesn’t implenent any defenses against SQL injection attackes, so an attacker can construct an attack like:
+
+‘...albums.php?catDesc=Chamber&catID=’something’’
+
+This results in the SQL query:
+	
+SELECT CDID, CDTitle FROM tiptop_cd WHERE catID = ‘something’
+
+Because in the database, catID has ‘int’ type, not ‘varchar’. So if our code uses mysqli_query in a straightforward way, this will cause an error to the database. 
+And there are more better examples when the attacker can change the value of parameters in the browser request.
+
+    </p>
+
+    <p>
+
+      In order to prevent SQL Injection attackes like above, input validatoin and parametrized queries including prepared statments shoud be used.
+
+In our case, both are conducted.
+
+In our web, password needs to be at least 8 characters, at least 1 uppercase, 1 lowercase and 1 number. Validating password is conducted in the client-side. But the attacker can still pass this by using special characters, like ‘<’, ‘>’, ‘”’, etc. To prevent this, in the server-side, function htmlspecialchars() is used to get the password.
+
+Moreover, the function mysqli_stmt_bind_param is always used.
+
+Almost all SQL queries in our web use prepare statemnts. In the file ‘user_login’, which handles logic when the user presses the button ‘log in’ in the page ‘login.php’, the prepare statement is used:
+
+    </p>
+
+    <p>
+      <pre>
+        if ($stmt = mysqli_prepare($conn, $sql1)){
+          mysqli_stmt_execute($stmt);
+          mysqli_stmt_bind_result($stmt, $userName, $userID, $password, $admin);
+          if (mysqli_stmt_fetch($stmt)) {
+              if ($password == ""){
+                  $ok_username = false;
+                  echo("<p>Wrong username</p>");
+                  echo("<a href='login.php'>Click here to go back</a>"); 
+              }else{
+                  $ok_username = true;
+              }
+      
+          }
+          else {
+              return false;
+          }
+          mysqli_stmt_close($stmt);
+      }
+      else {
+          echo "<p>Could not prepare statement</p>";
+      }
+      
+    </pre>
+    </p>
+
+    <p>
+      The security of our websites can still be improved more. Firstly, there are still some 2, or 3 SQL queries that do not use SQL prepare statments. Secondly, input validation can still be improved more.
+    </p>
+
+    <h5>Authentication flaws</h5>
+
+    <p>
+      Authentication flaws are security vulnerabilities in two areas: session management and credential management. By manipulating these areas, the attacker can use either avenua to masquerade as a user: hijacked session Ids or stolen login credentials.
+    </p>
+
+    <p>
+      Session management is part of authentication flaws. Since web applications use sessions and credentials to identify individual users, attackers can impersonate them using either machanisim.
+    </p>
+
+    <p>
+      In our web, password needs to be at least 8 characters, at least 1 uppercase, 1 lowercase and 1 number. Validating password is conducted in the client-side. 
+    </p>
+
+    <p>
+      <pre>
+        &lt;div class="form-group"&gt;
+        &lt;label for="pwd"&gt;Password:&lt;/label&gt;
+        &lt;input type="password" class="form-control" id="pwd" placeholder="Enter password" name="pwd" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A Z]).{8,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters" required&gt;
+        &lt;/div&gt;
+      </pre>
+    </p>
+
+    <p>
+      Sensitive data such as passwords are stored encrypted in the database.
+      <code>
+        $phash = password_hash($pwd, PASSWORD_DEFAULT);
+
+        $sql = "INSERT INTO tiptop_user(userName, FirstName,LastName,password,email,IDSource,RegistrationDate,LastLogin,admin) VALUES(?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)";
+
+        mysqli_stmt_bind_param($stmt, "sssssss", $userName, $firstName, $lastName, $phash, $email, $source, $admin); 
+
+      </code>
+
+    </p>
+
+    <p>
+      In our web, PHP sessions are used to provide application security. It is not possible to access restricted pages once the owner has logged out. 
+      The web always check for session when starting a page. After the user login or signup, the web send to $_SESSION new key-value:
+    </p>
+
+    <code>
+      $_SESSION['userName'] = $_REQUEST['userName'];
+      $_SESSION['userID'] = $userID;
+      $_SESSION['admin'] = $admin;
+
+    </code>
+
+    <p>
+      These key-values make sure that the normal user and admin have different access to some speicific pages.
+      If the user do not login, the variable $_SESSION will not have key ‘userName’, ‘userID’, ‘admin’, etc. 
+
+    </p>
+
+    <p>
+      The below code in ‘header.php’ illustrates these above:
+    </p>
+
+    <pre>
+      if(array_key_exists('userName', $_SESSION )){
+        $userName = $_SESSION['userName'];
+        echo("&lt;button class='btn btn-white shadow-warning text-warning'&gt;&lt;i class='fas fa-user me-2'&gt;&lt;/i&gt;Hello, $userName&lt;/button&gt;");
+        echo("&lt;div class='d-flex mt-4 mt-lg-0 ms-lg-auto ms-xl-0'&gt;");
+        echo("&lt;/div&gt;");
+        if($_SESSION['admin'] == "N"){
+          echo("&lt;div class='d-flex mt-4 mt-lg-0 ms-lg-auto ms-xl-0 '&gt;");
+          echo("&lt;a class='btn btn-white shadow-warning text-warning' href='comments.php'&gt;Your comments&lt;/a&gt;");
+          echo("&lt;/div&gt;");
+        }else if($_SESSION['admin'] == "Y"){
+          echo("&lt;div class='d-flex mt-4 mt-lg-0 ms-lg-auto ms-xl-0 '&gt;");
+          echo("&lt;a class='btn btn-white shadow-warning text-warning' href='users.php'&gt;List of users&lt;/a&gt;");
+          echo("&lt;a class='btn btn-white shadow-warning text-warning' href='signup.php'&gt; &lt;i class='fas fa-user me-2'&gt;&lt;/i&gt;Add a new user&lt;/a&gt;");
+          echo("&lt;/div&gt;");
+        }
+        echo("&lt;a class='btn btn-white shadow-warning text-warning' href='logout.php'&gt; &lt;i class='fas fa-user me-2'&gt;&lt;/i&gt;Log out&lt;/a&gt;");
+      }else{
+        echo("&lt;a class='btn btn-white shadow-warning text-warning' href='login.php'&gt; &lt;i class='fas fa-user me-2'&gt;&lt;/i&gt;Log in&lt;/a&gt;");
+      }
+
+    </pre>
+    <p>
+      PHP session using in our web still can be improved by using: session.use_strict_mode, session.cookie_lifetime, session.use_cookies, and session.use_only_cookies,etc and many more.
+    </p>
+
+    <p>
+      Password use hash function to encrypt. It can use other more-secuirty function to encrypt. In our code, the parameter ‘PASSWORD_DEFAULT’ is used :
+    </p>
+
+    <code>
+      $phash = password_hash($pwd, PASSWORD_DEFAULT);
+    </code>
+
+    <p>
+      Many other more security parameter can be used, for example: 
+    </p>
+
+    <ul>
+      <li>PASSWORD_BCRYPT - Use the CRYPT_BLOWFISH algorithm to create the hash. This will produce a standard crypt() compatible hash using the "$2y$" identifier. The result will always be a 60 character string, or false on failure.</li>
+      <li>
+        PASSWORD_ARGON2I - Use the Argon2i hashing algorithm to create the hash. This algorithm is only available if PHP has been compiled with Argon2 support.
+      </li>
+      <li>
+        o	PASSWORD_ARGON2ID - Use the Argon2id hashing algorithm to create the hash. This algorithm is only available if PHP has been compiled with Argon2 support.
+      </li>
+    </ul>
+</body>
+</html>
